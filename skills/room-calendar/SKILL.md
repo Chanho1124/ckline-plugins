@@ -14,11 +14,31 @@ description: CKLINE 회의실의 일정, 예약 현황, 가용 시간을 Microso
 | 대회의실 | sel_mtr8_l@ckline.co.kr |
 | 중회의실 | sel_mtr8_m@ckline.co.kr |
 
-## 필수 도구 호출 규칙
+## 필수 Microsoft 365 도구 호출 규칙
 
-회의실 요청은 일정 제목 또는 본문을 검색하는 방식으로 처리하지 않는다.
+회의실 일정 조회에는 반드시 `outlook_calendar_search` 도구를 사용한다.
 
-특히 아래 방식은 잘못된 호출이다.
+대회의실 요청일 경우, 도구 호출 JSON에 아래 필드를 반드시 포함한다.
+
+```json
+{
+  "calendarOwnerEmail": "sel_mtr8_l@ckline.co.kr"
+}
+```
+
+중회의실 요청일 경우, 도구 호출 JSON에 아래 필드를 반드시 포함한다.
+
+```json
+{
+  "calendarOwnerEmail": "sel_mtr8_m@ckline.co.kr"
+}
+```
+
+`calendarOwnerEmail`을 생략하면 사용자 개인 기본 캘린더가 조회된다.
+따라서 대회의실 또는 중회의실을 언급한 요청에서 `calendarOwnerEmail` 없이
+`outlook_calendar_search`를 호출하는 것은 금지한다.
+
+회의실명은 일정 제목 검색어가 아니다. 다음 호출은 잘못된 방식이다.
 
 ```json
 {
@@ -26,63 +46,26 @@ description: CKLINE 회의실의 일정, 예약 현황, 가용 시간을 Microso
 }
 ```
 
-대회의실 일정 조회 시 Microsoft 365 Outlook Calendar 조회 도구의
-`calendarOwnerEmail` 파라미터에 반드시 아래 값을 전달한다.
-
-```text
-sel_mtr8_l@ckline.co.kr
-```
-
-중회의실 일정 조회 시 `calendarOwnerEmail` 파라미터에 반드시 아래 값을 전달한다.
-
-```text
-sel_mtr8_m@ckline.co.kr
-```
-
-회의실의 일정 전체를 조회할 때 `query`는 `"*"`를 사용한다.
-회의실명인 “대회의실” 또는 “중회의실”을 `query` 값으로 넣어 검색하지 않는다.
-
-## 대회의실 호출 예시
-
-사용자 요청:
-
-```text
-이번 주 대회의실 예약 조회해줘
-```
-
-반드시 아래 의미와 동등하게 도구를 호출한다.
+회의실의 캘린더 전체를 조회할 때는 다음처럼 호출한다.
 
 ```json
 {
   "query": "*",
   "calendarOwnerEmail": "sel_mtr8_l@ckline.co.kr",
-  "afterDateTime": "이번 주 시작 시각",
-  "beforeDateTime": "다음 주 시작 시각",
+  "afterDateTime": "조회 기간 시작",
+  "beforeDateTime": "조회 기간 종료",
   "order": "oldest",
   "limit": 25
 }
 ```
 
-## 중회의실 호출 예시
+도구 호출 직전에 다음을 점검한다.
 
-사용자 요청:
+- 대회의실이면 `calendarOwnerEmail` 값이 `sel_mtr8_l@ckline.co.kr`인가?
+- 중회의실이면 `calendarOwnerEmail` 값이 `sel_mtr8_m@ckline.co.kr`인가?
+- 대상 계정을 지정하지 않은 개인 기본 캘린더 조회가 아닌가?
 
-```text
-이번 주 중회의실 예약 조회해줘
-```
-
-반드시 아래 의미와 동등하게 도구를 호출한다.
-
-```json
-{
-  "query": "*",
-  "calendarOwnerEmail": "sel_mtr8_m@ckline.co.kr",
-  "afterDateTime": "이번 주 시작 시각",
-  "beforeDateTime": "다음 주 시작 시각",
-  "order": "oldest",
-  "limit": 25
-}
-```
+위 조건을 만족하지 않으면 도구를 호출하지 말고 올바른 `calendarOwnerEmail`을 포함해 다시 호출한다.
 
 ## 일반 규칙
 
